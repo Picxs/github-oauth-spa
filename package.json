@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "echo 'Build process handled by GitHub Actions'",
-    "dev": "python3 -m http.server 8000",
-    "serve": "npx serve dist"
+    "dev:server": "node server.js",
+    "dev:client": "python3 -m http.server 8000",
+    "start": "node server.js"
   },
-  "devDependencies": {
-    "serve": "^14.0.0"
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "node-fetch": "^3.3.2"
   }
 }

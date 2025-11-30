@@ -1,2 +1,2 @@
 // Configuração global da aplicação
-window.CLIENT_ID = 'MOCK_CLIENT_ID'; // Será substituído pelo GitHub Actions
+window.CLIENT_ID = 'Ov23lihCtieY7buaZx6s'; // Será substituído pelo GitHub Actions

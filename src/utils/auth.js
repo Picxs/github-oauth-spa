@@ -1,4 +1,4 @@
-// Utilitários para geração de valores aleatórios
+
 class AuthUtils {
     static generateRandomString(length) {
         const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -43,7 +43,7 @@ class AuthUtils {
         sessionStorage.setItem('oauth_state', state);
 
         // Construir URL de autorização
-        const clientId = window.CLIENT_ID; // Será injetado via GitHub Actions
+        const clientId = window.CLIENT_ID;
         const redirectUri = `${window.location.origin}/callback.html`;
         const scope = 'read:user repo'; // Escopos para Viewer e Manager
 
@@ -60,65 +60,26 @@ class AuthUtils {
         window.location.href = authUrl.toString();
     }
 
-    // Trocar code por access_token
-    static async exchangeCodeForToken(code) {
-        const codeVerifier = sessionStorage.getItem('code_verifier');
-        const clientId = window.CLIENT_ID;
-
-        const response = await fetch('https://github.com/login/oauth/access_token', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                client_id: clientId,
-                code: code,
-                code_verifier: codeVerifier,
-                redirect_uri: `${window.location.origin}/callback.html`
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error('Falha na troca do código por token');
-        }
-
-        const data = await response.json();
-        return data.access_token;
-    }
-
     // Verificar escopos do usuário
     static async getUserScopes(accessToken) {
         try {
-            // Tentar uma operação de escrita para verificar escopo 'repo'
+            // Tentar uma operação de leitura primeiro
             const response = await fetch('https://api.github.com/user/repos', {
-                method: 'POST',
+                method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                     'Accept': 'application/vnd.github.v3+json'
-                },
-                body: JSON.stringify({
-                    name: 'test-scope-validation',
-                    auto_init: true,
-                    private: true
-                })
+                }
             });
 
-            // Se conseguir criar repositório, tem escopo Manager
-            if (response.status === 201) {
-                // Deletar o repositório de teste
-                const repoData = await response.json();
-                await fetch(`https://api.github.com/repos/${repoData.owner.login}/${repoData.name}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`
-                    }
-                });
-                return 'manager';
+            if (response.ok) {
+                // Para simplificar, vamos considerar que se consegue ler repositórios,
+                // tem pelo menos permissão de viewer
+                // Em um cenário real, você verificaria os escopos no token JWT
+                return 'viewer';
             }
         } catch (error) {
-            // Se falhar, é Viewer
-            console.log('Usuário tem escopo viewer apenas');
+            console.log('Erro ao verificar escopos:', error);
         }
         return 'viewer';
     }

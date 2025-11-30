@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processando Login - GitHub Repo Manager</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <h1>GitHub Repository Manager</h1>
+            <div id="content">
+                <div class="login-container">
+                    <h2>Processando autenticação...</h2>
+                    <p>Por favor, aguarde enquanto finalizamos seu login.</p>
+                    <div class="loading-spinner"></div>
+                    <p id="status">Iniciando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // USANDO VARIÁVEL CONFIGURADA NO SERVIDOR
+        const CLIENT_ID = 'Ov23lihCtieY7buaZx6s'; // Pode manter hardcoded pois é público
+        const BACKEND_URL = 'http://localhost:3001';
+        
+        console.log('=== CALLBACK INICIADO ===');
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const state = urlParams.get('state');
+        const error = urlParams.get('error');
+
+        console.log('Code:', code);
+        console.log('State:', state);
+        console.log('Error:', error);
+
+        const statusElement = document.getElementById('status');
+
+        async function trocarCodigoPorToken() {
+            try {
+                statusElement.textContent = 'Validando segurança...';
+                
+                const codeVerifier = sessionStorage.getItem('code_verifier');
+                const storedState = sessionStorage.getItem('oauth_state');
+
+                console.log('Code Verifier:', codeVerifier);
+                console.log('Stored State:', storedState);
+
+                // Validar state
+                if (state !== storedState) {
+                    throw new Error('Falha de segurança: State não corresponde');
+                }
+
+                statusElement.textContent = 'Obtendo token de acesso...';
+
+                // Usar backend para trocar código por token
+                const response = await fetch(`${BACKEND_URL}/exchange-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        client_id: CLIENT_ID,
+                        code: code,
+                        code_verifier: codeVerifier,
+                        redirect_uri: window.location.origin + '/callback.html'
+                    })
+                });
+
+                console.log('Status do backend:', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Erro no backend: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('Resposta do backend:', data);
+
+                if (data.access_token) {
+                    statusElement.textContent = 'Token recebido! Salvando...';
+                    
+                    // Salvar token
+                    sessionStorage.setItem('access_token', data.access_token);
+                    sessionStorage.removeItem('code_verifier');
+                    sessionStorage.removeItem('oauth_state');
+                    
+                    console.log('Access Token salvo com sucesso!');
+                    statusElement.textContent = 'Login bem-sucedido! Redirecionando...';
+                    
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1500);
+                    
+                } else {
+                    throw new Error('Access token não recebido: ' + (data.error || JSON.stringify(data)));
+                }
+
+            } catch (error) {
+                console.error('Erro no callback:', error);
+                statusElement.textContent = 'Erro: ' + error.message;
+                statusElement.style.color = 'red';
+                
+                // Limpar dados em caso de erro
+                sessionStorage.removeItem('code_verifier');
+                sessionStorage.removeItem('oauth_state');
+                
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 5000);
+            }
+        }
+
+        // Iniciar processo
+        if (error) {
+            statusElement.textContent = 'Erro de autorização: ' + error;
+            statusElement.style.color = 'red';
+            setTimeout(() => window.location.href = '/', 3000);
+        } else if (code) {
+            trocarCodigoPorToken();
+        } else {
+            statusElement.textContent = 'Nenhum código de autorização recebido';
+            statusElement.style.color = 'red';
+            setTimeout(() => window.location.href = '/', 3000);
+        }
+    </script>
+</body>
+</html>
