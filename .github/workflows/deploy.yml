@@ -32,9 +32,6 @@ jobs:
         # Criar diretório dist
         mkdir -p dist
         
-        # Copiar todos os arquivos estáticos
-        cp -r dist/
-        
         # Criar diretório para src dentro de dist
         mkdir -p dist/src
         
