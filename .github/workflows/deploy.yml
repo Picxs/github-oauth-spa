@@ -33,7 +33,7 @@ jobs:
         mkdir -p dist
         
         # Copiar todos os arquivos estáticos
-        cp -r public/* dist/
+        cp -r dist/
         
         # Criar diretório para src dentro de dist
         mkdir -p dist/src
