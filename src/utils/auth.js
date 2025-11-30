@@ -43,8 +43,7 @@ class AuthUtils {
         sessionStorage.setItem('oauth_state', state);
 
         // Construir URL de autorização
-        //const clientId = window.CLIENT_ID; // Será injetado via GitHub Actions
-        const clientId = Ov23lihCtieY7buaZx6s;
+        const clientId = window.CLIENT_ID; // Será injetado via GitHub Actions
         const redirectUri = `${window.location.origin}/callback.html`;
         const scope = 'read:user repo'; // Escopos para Viewer e Manager
 
