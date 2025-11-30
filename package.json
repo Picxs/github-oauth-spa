@@ -1,0 +1,13 @@
+{
+  "name": "github-oauth-spa",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "echo 'Build process handled by GitHub Actions'",
+    "dev": "python3 -m http.server 8000",
+    "serve": "npx serve dist"
+  },
+  "devDependencies": {
+    "serve": "^14.0.0"
+  }
+}

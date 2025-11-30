@@ -11,13 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pages: write
+      id-token: write
     
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
@@ -27,26 +29,40 @@ jobs:
 
     - name: Build and inject CLIENT_ID
       run: |
-        # Criar versão dos arquivos JS com CLIENT_ID injetado
-        find src public -name "*.js" -o -name "*.html" | while read file; do
+        # Criar diretório dist
+        mkdir -p dist
+        
+        # Copiar todos os arquivos estáticos
+        cp -r public/* dist/
+        
+        # Criar diretório para src dentro de dist
+        mkdir -p dist/src
+        
+        # Copiar e processar arquivos JavaScript
+        for file in src/*.js; do
           if [ -f "$file" ]; then
-            sed "s/window.CLIENT_ID = 'MOCK_CLIENT_ID'/window.CLIENT_ID = '${{ secrets.AUTH_CLIENT_ID }}'/g" "$file" > "$file.tmp"
-            mv "$file.tmp" "$file"
+            sed "s/window.CLIENT_ID = 'MOCK_CLIENT_ID'/window.CLIENT_ID = '${{ secrets.AUTH_CLIENT_ID }}'/g" "$file" > "dist/$file"
           fi
         done
         
-        # Copiar arquivos para dist
-        mkdir -p dist
-        cp -r public/* dist/
-        cp -r src dist/
+        # Copiar componentes e utils
+        cp -r src/components dist/src/ 2>/dev/null || true
+        cp -r src/utils dist/src/ 2>/dev/null || true
         
-        # Criar um index.html básico se não existir
-        if [ ! -f "dist/index.html" ]; then
-          cp public/index.html dist/
-        fi
+        # Verificar se os arquivos foram criados
+        echo "Conteúdo do diretório dist:"
+        ls -la dist/
+        echo "Conteúdo do diretório dist/src:"
+        ls -la dist/src/
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./dist
 
     - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./dist
+      id: deployment
+      uses: actions/deploy-pages@v4
